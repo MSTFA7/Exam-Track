@@ -121,7 +121,12 @@ function renderExams() {
     if (filtered.length === 0) {
         grid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">📋</div>
+        <div class="empty-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+  </svg>
+</div>
         <h3>${activeFilter === 'all' ? 'No exams yet' : 'Nothing here'}</h3>
         <p>${activeFilter === 'all' ? 'Add your first exam to start tracking.' : 'No exams match this filter.'}</p>
       </div>`;
@@ -131,23 +136,23 @@ function renderExams() {
     grid.innerHTML = filtered.map(exam => renderCard(exam)).join('');
 }
 function importData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (!Array.isArray(imported)) throw new Error();
-      exams = imported;
-      saveToStorage();
-      renderExams();
-      showToast(`✓ Imported ${imported.length} exams.`, 'var(--green)');
-    } catch {
-      showToast('⚠ Invalid file.', 'var(--red)');
-    }
-    event.target.value = '';
-  };
-  reader.readAsText(file);
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (!Array.isArray(imported)) throw new Error();
+            exams = imported;
+            saveToStorage();
+            renderExams();
+            showToast(`✓ Imported ${imported.length} exams.`, 'var(--green)');
+        } catch {
+            showToast('⚠ Invalid file.', 'var(--red)');
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file);
 }
 
 function renderCard(exam) {
