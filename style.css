@@ -798,6 +798,11 @@ textarea {
   justify-content: space-between;
   margin-bottom: 20px;
 }
+.calendar-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
 .calendar-nav-title {
   font-family: 'DM Serif Display', serif;
@@ -833,6 +838,20 @@ textarea {
   overflow: hidden;
 }
 
+.calendar-grid.fullscreen {
+  height: calc(100vh - 56px);
+  grid-template-rows: 36px repeat(var(--cal-rows), 1fr);
+  align-content: stretch;
+}
+.calendar-grid.fullscreen .cal-day {
+  min-height: unset;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.calendar-grid.fullscreen .cal-day-header {
+  grid-auto-rows: unset;
+}
 .cal-day-header {
   background: var(--surface2);
   padding: 10px 0;

@@ -22,8 +22,8 @@ const CALENDAR_FIELDS = [
     { key: 'duration', label: 'Duration' },
     { key: 'priority', label: 'Priority' },
 ];
-
 let calendarFieldPrefs = JSON.parse(localStorage.getItem('examvault_cal_fields') || '{"countdown":true,"time":false,"location":false,"duration":false,"priority":false}');
+let calendarFullscreen = false;
 
 function initColorGrid() {
     const grid = document.getElementById('color-grid');
@@ -66,6 +66,42 @@ function switchView(view, btn) {
         sidebar.classList.add('visible');
         renderSidebar();
         renderCalendar();
+    }
+}
+
+function toggleCalendarFullscreen() {
+    calendarFullscreen = !calendarFullscreen;
+    const btn = document.getElementById('fs-btn');
+    const sidebar = document.getElementById('calendar-sidebar');
+    const controls = document.querySelector('.controls');
+    const statsBar = document.querySelector('.stats-bar');
+    const header = document.querySelector('header');
+    const app = document.querySelector('.app');
+    const layout = document.querySelector('.calendar-layout');
+    const calGrid = document.querySelector('.calendar-grid');
+
+    if (calendarFullscreen) {
+        header.style.display = 'none';
+        statsBar.style.display = 'none';
+        controls.style.display = 'none';
+        sidebar.style.display = 'none';
+        app.style.padding = '16px 100px';
+        app.style.maxWidth = '100%';
+        layout.style.margin = '0';
+        btn.textContent = '✕';
+        btn.title = 'Exit Fullscreen';
+        calGrid.classList.add('fullscreen');
+    } else {
+        header.style.display = '';
+        statsBar.style.display = '';
+        controls.style.display = '';
+        sidebar.style.display = '';
+        app.style.padding = '';
+        app.style.maxWidth = '';
+        layout.style.margin = '';
+        btn.textContent = '⛶';
+        btn.title = 'Fullscreen';
+        calGrid.classList.remove('fullscreen');
     }
 }
 
@@ -134,22 +170,27 @@ function renderCalendar() {
     // Next month's leading days
     const totalCells = firstDay + daysInMonth;
     const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    const numRows = Math.ceil((totalCells + remaining) / 7);
+    document.documentElement.style.setProperty('--cal-rows', numRows);
+
     for (let d = 1; d <= remaining; d++) {
         const nextMonth = month + 1 > 11 ? 0 : month + 1;
         const nextYear = month + 1 > 11 ? year + 1 : year;
         cells += makeCell(d, nextYear, nextMonth, true);
     }
-
     wrapper.innerHTML = `
-    <div class="calendar-nav">
-      <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
-      <div class="calendar-nav-title">${monthName}</div>
-      <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
-    </div>
-    <div class="calendar-grid">
-      ${headers}
-      ${cells}
-    </div>`;
+  <div class="calendar-nav">
+  <div class="calendar-nav-center">
+    <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+    <div class="calendar-nav-title">${monthName}</div>
+    <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+  </div>
+  <button class="cal-nav-btn" onclick="toggleCalendarFullscreen()" id="fs-btn" title="Fullscreen">⛶</button>
+</div>
+  <div class="calendar-grid">
+    ${headers}
+    ${cells}
+  </div>`;
 }
 
 function changeMonth(dir) {
@@ -158,8 +199,8 @@ function changeMonth(dir) {
 }
 
 function renderSidebar() {
-  const container = document.getElementById('sidebar-fields');
-  container.innerHTML = CALENDAR_FIELDS.map(f => `
+    const container = document.getElementById('sidebar-fields');
+    container.innerHTML = CALENDAR_FIELDS.map(f => `
     <div class="sidebar-field-item ${calendarFieldPrefs[f.key] ? 'on' : ''}" onclick="toggleCalField('${f.key}')">
       <span class="sidebar-field-label">${f.label}</span>
       <div class="sidebar-toggle ${calendarFieldPrefs[f.key] ? 'on' : ''}"></div>
@@ -532,5 +573,11 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeModal();
     if ((e.metaKey || e.ctrlKey) && e.key === 'n') { e.preventDefault(); openModal(); }
 });
-
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        if (calendarFullscreen) toggleCalendarFullscreen();
+        else closeModal();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'n') { e.preventDefault(); openModal(); }
+});
 renderExams();
