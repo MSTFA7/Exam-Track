@@ -60,11 +60,23 @@
                 <option value="name">Sort: Name</option>
                 <option value="priority">Sort: Priority</option>
             </select>
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="grid" onclick="switchView('grid', this)">⊞ Grid</button>
+                <button class="view-btn" data-view="calendar" onclick="switchView('calendar', this)">⊟ Calendar</button>
+            </div>
         </div>
 
         <div class="exams-grid" id="exams-grid"></div>
+        <div class="calendar-layout">
+            <div id="calendar-wrapper" class="calendar-wrapper"></div>
+        </div>
     </div>
-
+    </div>
+    <div class="calendar-sidebar" id="calendar-sidebar">
+        <div class="sidebar-title">Card Fields</div>
+        <p class="sidebar-desc">Subject and Exam Name are always shown.</p>
+        <div class="sidebar-fields" id="sidebar-fields"></div>
+    </div>
     <div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
         <div class="modal">
             <div class="modal-header">

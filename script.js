@@ -13,6 +13,17 @@ let exams = JSON.parse(localStorage.getItem('examvault_exams') || '[]');
 let editingId = null;
 let activeFilter = 'all';
 let selectedColor = COLORS[0].value;
+let currentView = 'grid';
+let calendarDate = new Date();
+const CALENDAR_FIELDS = [
+    { key: 'countdown', label: 'Time Remaining' },
+    { key: 'time', label: 'Exam Time' },
+    { key: 'location', label: 'Room' },
+    { key: 'duration', label: 'Duration' },
+    { key: 'priority', label: 'Priority' },
+];
+
+let calendarFieldPrefs = JSON.parse(localStorage.getItem('examvault_cal_fields') || '{"countdown":true,"time":false,"location":false,"duration":false,"priority":false}');
 
 function initColorGrid() {
     const grid = document.getElementById('color-grid');
@@ -34,7 +45,134 @@ function selectColor(val, el) {
 function saveToStorage() {
     localStorage.setItem('examvault_exams', JSON.stringify(exams));
 }
+function switchView(view, btn) {
+    currentView = view;
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
 
+    const grid = document.getElementById('exams-grid');
+    const layout = document.querySelector('.calendar-layout');
+
+    const sidebar = document.getElementById('calendar-sidebar');
+
+    if (view === 'grid') {
+        grid.classList.remove('hidden');
+        layout.classList.remove('active');
+        sidebar.classList.remove('visible');
+        renderExams();
+    } else {
+        grid.classList.add('hidden');
+        layout.classList.add('active');
+        sidebar.classList.add('visible');
+        renderSidebar();
+        renderCalendar();
+    }
+}
+
+function renderCalendar() {
+    const wrapper = document.getElementById('calendar-wrapper');
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+
+    const monthName = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    const today = new Date();
+
+    const examMap = {};
+    exams.forEach(exam => {
+        if (!examMap[exam.date]) examMap[exam.date] = [];
+        examMap[exam.date].push(exam);
+    });
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const headers = dayNames.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+    let cells = '';
+
+    function makeCell(d, y, m, faded = false) {
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = today.getFullYear() === y && today.getMonth() === m && today.getDate() === d;
+        const dayExams = examMap[dateStr] || [];
+
+        const pills = dayExams.map(exam => {
+            const cd = getCountdown(exam.date, exam.time);
+            const color = exam.color || COLORS[0].value;
+            const countdownText = isCompleted(exam) ? 'Done' : cd ? `${cd.days}d ${cd.hours}h` : 'Done';
+            return `
+  <div class="cal-exam-pill" style="background:${color}" onclick="editExam('${exam.id}')" title="${exam.subject} — ${exam.name}">
+    <div class="cal-exam-name">${exam.name}</div>
+    <div class="cal-exam-subject">${exam.subject}</div>
+    ${calendarFieldPrefs.countdown ? `<div class="cal-exam-countdown">${countdownText}</div>` : ''}
+    ${calendarFieldPrefs.time ? `<div class="cal-exam-countdown">${formatTime(exam.time)}</div>` : ''}
+    ${calendarFieldPrefs.location && exam.location ? `<div class="cal-exam-countdown">📍 ${exam.location}</div>` : ''}
+    ${calendarFieldPrefs.duration && exam.duration ? `<div class="cal-exam-countdown">⏱ ${formatDuration(exam.duration)}</div>` : ''}
+    ${calendarFieldPrefs.priority ? `<div class="cal-exam-countdown" style="color:rgba(0,0,0,0.6)">${exam.priority}</div>` : ''}
+  </div>`;
+        }).join('');
+
+        return `
+      <div class="cal-day ${isToday ? 'today' : ''} ${faded ? 'faded' : ''}">
+        <div class="cal-day-num">${d}</div>
+        ${pills}
+      </div>`;
+    }
+
+    // Previous month's trailing days
+    for (let i = firstDay - 1; i >= 0; i--) {
+        const prevMonth = month - 1 < 0 ? 11 : month - 1;
+        const prevYear = month - 1 < 0 ? year - 1 : year;
+        cells += makeCell(daysInPrevMonth - i, prevYear, prevMonth, true);
+    }
+
+    // Current month
+    for (let d = 1; d <= daysInMonth; d++) {
+        cells += makeCell(d, year, month, false);
+    }
+
+    // Next month's leading days
+    const totalCells = firstDay + daysInMonth;
+    const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let d = 1; d <= remaining; d++) {
+        const nextMonth = month + 1 > 11 ? 0 : month + 1;
+        const nextYear = month + 1 > 11 ? year + 1 : year;
+        cells += makeCell(d, nextYear, nextMonth, true);
+    }
+
+    wrapper.innerHTML = `
+    <div class="calendar-nav">
+      <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="calendar-nav-title">${monthName}</div>
+      <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="calendar-grid">
+      ${headers}
+      ${cells}
+    </div>`;
+}
+
+function changeMonth(dir) {
+    calendarDate.setMonth(calendarDate.getMonth() + dir);
+    renderCalendar();
+}
+
+function renderSidebar() {
+  const container = document.getElementById('sidebar-fields');
+  container.innerHTML = CALENDAR_FIELDS.map(f => `
+    <div class="sidebar-field-item ${calendarFieldPrefs[f.key] ? 'on' : ''}" onclick="toggleCalField('${f.key}')">
+      <span class="sidebar-field-label">${f.label}</span>
+      <div class="sidebar-toggle ${calendarFieldPrefs[f.key] ? 'on' : ''}"></div>
+    </div>
+  `).join('');
+}
+
+function toggleCalField(key) {
+    calendarFieldPrefs[key] = !calendarFieldPrefs[key];
+    localStorage.setItem('examvault_cal_fields', JSON.stringify(calendarFieldPrefs));
+    renderSidebar();
+    renderCalendar();
+}
 function getCountdown(examDateStr, examTimeStr) {
     const now = new Date();
     const examDT = new Date(`${examDateStr}T${examTimeStr || '00:00'}`);
