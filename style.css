@@ -900,7 +900,7 @@ textarea {
 
 .cal-exam-pill:hover { opacity: 0.8; }
 
-.cal-exam-name {
+.cal-exam-subject {
   font-size: 0.7rem;
   font-weight: 600;
   white-space: nowrap;
@@ -910,7 +910,7 @@ textarea {
   line-height: 1.3;
 }
 
-.cal-exam-subject {
+.cal-exam-name {
   font-size: 0.62rem;
   white-space: nowrap;
   overflow: hidden;

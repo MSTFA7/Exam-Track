@@ -138,8 +138,8 @@ function renderCalendar() {
             const countdownText = isCompleted(exam) ? 'Done' : cd ? `${cd.days}d ${cd.hours}h` : 'Done';
             return `
   <div class="cal-exam-pill" style="background:${color}" onclick="editExam('${exam.id}')" title="${exam.subject} — ${exam.name}">
-    <div class="cal-exam-name">${exam.name}</div>
-    <div class="cal-exam-subject">${exam.subject}</div>
+  <div class="cal-exam-subject">${exam.subject}</div>
+  <div class="cal-exam-name">${exam.name}</div>
     ${calendarFieldPrefs.countdown ? `<div class="cal-exam-countdown">${countdownText}</div>` : ''}
     ${calendarFieldPrefs.time ? `<div class="cal-exam-countdown">${formatTime(exam.time)}</div>` : ''}
     ${calendarFieldPrefs.location && exam.location ? `<div class="cal-exam-countdown">📍 ${exam.location}</div>` : ''}
